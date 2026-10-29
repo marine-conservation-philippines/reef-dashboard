@@ -1,0 +1,62 @@
+# Weekly build of the MCP Reef Health Data Portal.
+# Same steps as the Claude scheduled task, run by GitHub instead.
+# Put this file in the reef-dashboard repo at: .github/workflows/weekly-reef-dashboard.yml
+# Needs two repository secrets: HELPER_URL and HELPER_KEY (Settings > Secrets and variables > Actions).
+
+name: Weekly reef dashboard build
+
+on:
+  schedule:
+    - cron: '3 4 * * 1'      # Mondays 04:03 UTC (05:03 Copenhagen in winter, 06:03 in summer)
+  workflow_dispatch:          # adds a "Run workflow" button for a manual run
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      HELPER_URL: ${{ secrets.HELPER_URL }}
+      HELPER_KEY: ${{ secrets.HELPER_KEY }}
+      WEBSITE_STATUS_URL: https://marineconservationphilippines.org/wp-json/mcp-reef/v1/status
+    steps:
+      - name: Step 1 - fetch the code and keys from the helper
+        run: |
+          mkdir -p ~/mcp && cd ~/mcp
+          python3 - <<'EOF'
+          import base64, io, json, os, urllib.request, zipfile
+          URL, KEY = os.environ['HELPER_URL'], os.environ['HELPER_KEY']
+          def call(action):
+              req = urllib.request.Request(URL, data=json.dumps({'action': action, 'key': KEY}).encode(),
+                                           headers={'Content-Type': 'application/json'})
+              r = json.loads(urllib.request.urlopen(req, timeout=300).read())
+              if not r.get('ok'):
+                  raise SystemExit(f'helper {action} failed: {r.get("error")}')
+              return r
+          c = call('code')
+          zipfile.ZipFile(io.BytesIO(base64.b64decode(c['base64']))).extractall('.')
+          s = call('secrets')
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              for name in ('DBMCP_KEY', 'GITHUB_TOKEN'):
+                  print(f'::add-mask::{s[name]}')          # keep the keys out of the logs
+                  f.write(f'{name}={s[name]}\n')
+          print(f"code {c['bytes']} bytes, updated {c['updated']}; keys received")
+          EOF
+
+      - name: Step 2 - install what the build needs
+        run: |
+          pip install --quiet pymongo openpyxl pandas numpy scipy matplotlib playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Step 3 - run the build (publishes, archives, files the report and emails)
+        run: cd ~/mcp && python3 mcp-dashboard/automation/weekly.py
+
+      - name: If anything failed - send the failure email
+        if: failure()
+        run: |
+          python3 -c "
+          import json, os, urllib.request
+          body = {'action': 'email', 'key': os.environ['HELPER_KEY'],
+                  'subject': '[Reef dashboard] Weekly run FAILED',
+                  'text': 'The GitHub Actions weekly run failed. See the run log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}. If the build had not started, nothing was published and the website keeps the last good version.'}
+          urllib.request.urlopen(urllib.request.Request(os.environ['HELPER_URL'], data=json.dumps(body).encode(),
+                                 headers={'Content-Type': 'application/json'}), timeout=120)"
