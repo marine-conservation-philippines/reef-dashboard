@@ -11,6 +11,10 @@
     root.innerHTML = '<p style="padding:24px;font-family:system-ui,sans-serif">The reef ' +
       'dashboard could not be loaded. Please try again in a moment.</p>';
   }
+  if (!root.children.length) {
+    root.innerHTML = '<p class="mcp-loading" role="status" style="padding:48px 24px;text-align:center;' +
+      'font-family:system-ui,sans-serif;color:#475569">Loading reef data\u2026</p>';
+  }
   fetch(base + 'manifest.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (!r.ok) { throw r.status; } return r.json(); })
     .then(function (m) {
@@ -21,10 +25,17 @@
       });
       var css = document.createElement('link');
       css.rel = 'stylesheet'; css.href = base + m.css;
+      var started = false;
+      function start() {
+        if (started) { return; }
+        started = true;
+        var js = document.createElement('script');
+        js.src = base + m.js; js.onerror = fail;
+        document.body.appendChild(js);
+      }
+      // the script waits for its stylesheet, so the page never draws unstyled (L6)
+      css.onload = start; css.onerror = start; setTimeout(start, 4000);
       document.head.appendChild(css);
-      var js = document.createElement('script');
-      js.src = base + m.js; js.onerror = fail;
-      document.body.appendChild(js);
     })
     .catch(fail);
 })();
