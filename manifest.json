@@ -1,27 +1,28 @@
 {
-  "version": "v66",
-  "built": "2026-10-30T21:59:02Z",
+  "version": "v67",
+  "built": "2026-10-31T13:14:09Z",
   "period": null,
-  "css": "reef-v66.css",
-  "js": "reef-v66.js",
+  "css": "reef-v67.css",
+  "js": "reef-v67.js",
   "fonts": [
     "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
   ],
   "files": {
-    "reef-v66.css": {
-      "sha256": "c7b796cb2d821c3454f9620fe22d7e3505f08483e0543839786bdb4d8f86dac2",
-      "bytes": 72671
+    "reef-v67.css": {
+      "sha256": "75779809818d70733b8e646833a737df2f105947b9b281cd0b690ea59a5ec234",
+      "bytes": 73675
     },
-    "reef-v66.js": {
-      "sha256": "cb9115032f0a60616a930b2edb762d18d251106f3f4d337346a638b7558a0e38",
-      "bytes": 2125714
+    "reef-v67.js": {
+      "sha256": "3dc6cfc5e6f86f3e09caa0a3ff0819e994038f54b3e7d12f075af27c9db35130",
+      "bytes": 2128489
     }
   },
-  "fingerprint": "abf2059aada0adf760ffcb6841fb737da8465484a2a8e204c5b3e2953525166a",
+  "fingerprint": "5fa46a98c8a81b494ad2fe5853d655a59428e0c5335fbbca4c55fa36af993581",
   "season": "JUN-AUG 2026",
   "kept_versions": [
     "v64",
     "v65",
-    "v66"
+    "v66",
+    "v67"
   ]
 }
